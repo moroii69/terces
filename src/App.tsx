@@ -237,30 +237,84 @@ function App() {
   const handleImport = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const text = await file.text();
-      const data = JSON.parse(text);
-      for (const project of data.projects) {
+      // Check if it's a JSON backup file
+      if (file.name.endsWith('.json')) {
+        const text = await file.text();
+        try {
+          const data = JSON.parse(text);
+          for (const project of data.projects) {
+            await projectsDB.add(project);
+          }
+          for (const secret of data.secrets) {
+            await secretsDB.add(secret);
+          }
+        } catch (error) {
+          console.error('Failed to parse JSON file:', error);
+          alert('Invalid backup file format');
+        }
+      }
+      // Handle .env file format
+      else if (file.name.endsWith('.env')) {
+        const text = await file.text();
+        // Parse .env format (key=value on separate lines)
+        const lines = text.split('\n');
+
+        // Create a project for the imported secrets
+        const project = {
+          id: crypto.randomUUID(),
+          name: `Imported ENV (${new Date().toLocaleDateString()})`,
+          tags: ['imported', 'env'],
+          isPinned: false,
+          createdAt: Date.now(),
+        };
         await projectsDB.add(project);
+
+        // Parse each line and create secrets
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (trimmedLine && !trimmedLine.startsWith('#')) {
+            const equalIndex = trimmedLine.indexOf('=');
+            if (equalIndex > 0) {
+              const key = trimmedLine.substring(0, equalIndex).trim();
+              const value = trimmedLine.substring(equalIndex + 1).trim();
+
+              // Create a secret for each env variable
+              const secret = {
+                id: crypto.randomUUID(),
+                projectId: project.id,
+                title: key,
+                content: encrypt(value, passphrase).content,
+                category: 'api_key',
+                isDeleted: false,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+              };
+              await secretsDB.add(secret);
+            }
+          }
+        }
+
+        // Notify user of successful import
+        alert(`Imported ${lines.filter(l => l.includes('=')).length} secrets into a new project`);
+      } else {
+        alert('Unsupported file format. Please use .json or .env files.');
       }
-      for (const secret of data.secrets) {
-        await secretsDB.add(secret);
-      }
+
       loadProjects();
       if (selectedProject) {
         loadSecrets(selectedProject.id);
       }
     }
   };
-
   const navigateToTrash = () => {
     setCurrentRoute(ROUTES.TRASH);
     loadDeletedSecrets(); // Ensure trash is loaded when navigating to it
   };
 
   const navigateHome = () => {
-    setCurrentRoute(ROUTES.HOME);
-    setSelectedProject(null);
+    window.location.reload();
   };
+
 
   if (showLanding) {
     return (
