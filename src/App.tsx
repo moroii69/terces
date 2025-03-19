@@ -187,12 +187,12 @@ function App() {
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      
+
       setCopyStatus({ ...copyStatus, [secret.id]: true });
       setTimeout(() => {
         setCopyStatus({ ...copyStatus, [secret.id]: false });
       }, 2000);
-      
+
       setTimeout(() => {
         const clearArea = document.createElement('textarea');
         clearArea.value = '';
@@ -243,14 +243,14 @@ function App() {
 
   if (showLanding) {
     return (
-      <motion.div 
+      <motion.div
         className="min-h-screen bg-yellow-50 flex flex-col items-center justify-center p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
         <div className="w-full max-w-4xl">
-          <motion.div 
+          <motion.div
             className="neo-card p-8 mb-8 parallax-container"
             style={{ rotateX, rotateY }}
             onMouseMove={(e) => {
@@ -263,19 +263,19 @@ function App() {
               mouseY.set(0);
             }}
           >
-            <motion.div 
+            <motion.div
               className="text-center mb-12 parallax-element"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
               <Lock className="w-16 h-16 mx-auto mb-4" />
-              <h1 className="text-4xl font-black mb-4">SECRETS MANAGER</h1>
+              <h1 className="text-4xl font-black mb-4">TERCES SECRETS MANAGER</h1>
               <p className="text-xl font-bold mb-8">Your secrets, your control, 100% private</p>
             </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-              <motion.div 
+              <motion.div
                 className="text-center"
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
@@ -285,7 +285,7 @@ function App() {
                 <h3 className="text-xl font-bold mb-2">100% Private</h3>
                 <p>All data stays in your browser. Nothing ever leaves your device.</p>
               </motion.div>
-              <motion.div 
+              <motion.div
                 className="text-center"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -295,7 +295,7 @@ function App() {
                 <h3 className="text-xl font-bold mb-2">End-to-End Encryption</h3>
                 <p>AES-256 encryption protects your secrets with your passphrase.</p>
               </motion.div>
-              <motion.div 
+              <motion.div
                 className="text-center"
                 initial={{ x: 20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
@@ -379,7 +379,7 @@ function App() {
     );
   }
 
-  const filteredSecrets = secrets.filter(secret => 
+  const filteredSecrets = secrets.filter(secret =>
     secret.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -388,7 +388,7 @@ function App() {
       <div className="neo-sidebar w-72 p-4">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-black">PROJECTS</h1>
-          <button 
+          <button
             onClick={() => setShowNewProject(true)}
             className="neo-button p-2 bg-blue-300"
           >
