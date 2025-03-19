@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --shadow-offset: 4px;
+  }
+
+  :root[data-theme='dark'] {
+    --bg-color: #1a1a1a;
+    --text-color: #ffffff;
+    --card-bg: #2a2a2a;
+    --border-color: #404040;
+  }
+
+  :root[data-theme='light'] {
+    --bg-color: #fefce8;
+    --text-color: #000000;
+    --card-bg: #ffffff;
+    --border-color: #000000;
+  }
+
+  body {
+    @apply bg-[var(--bg-color)] text-[var(--text-color)] transition-colors duration-200;
+  }
+}
+
+@layer components {
+  .neo-button {
+    @apply bg-[var(--card-bg)] border-2 border-[var(--border-color)] shadow-[4px_4px_0_0_var(--border-color)] 
+           hover:shadow-[2px_2px_0_0_var(--border-color)] hover:translate-x-[2px] hover:translate-y-[2px]
+           active:shadow-none active:translate-x-[4px] active:translate-y-[4px]
+           transition-all duration-200 font-bold;
+  }
+
+  .neo-input {
+    @apply bg-[var(--card-bg)] border-2 border-[var(--border-color)] shadow-[4px_4px_0_0_var(--border-color)]
+           focus:shadow-[2px_2px_0_0_var(--border-color)] focus:translate-x-[2px] focus:translate-y-[2px]
+           focus:outline-none transition-all duration-200;
+  }
+
+  .neo-card {
+    @apply bg-[var(--card-bg)] border-2 border-[var(--border-color)] shadow-[8px_8px_0_0_var(--border-color)];
+  }
+
+  .neo-sidebar {
+    @apply bg-[var(--card-bg)] border-r-2 border-[var(--border-color)];
+  }
+}
+
+.parallax-container {
+  transform-style: preserve-3d;
+  transform: perspective(1000px);
+}
+
+.parallax-element {
+  transform: translateZ(50px);
+  transition: transform 0.1s ease-out;
+}
