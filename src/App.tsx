@@ -1,30 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Plus, Download, Upload, Search, Copy, Eye, EyeOff, Shield, Database, Key, Trash2, Edit, Pin, Tags } from 'lucide-react';
+import { Lock, Plus, Download, Upload, Search, Copy, Eye, EyeOff, Shield, Database, Key, Trash2, Edit, Pin, Tags, ArrowLeft } from 'lucide-react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { projectsDB, secretsDB } from './lib/db';
 import { encrypt, decrypt } from './lib/crypto';
 import type { Project, Secret, Theme } from './types';
 import clsx from 'clsx';
 
+// Simple route management
+const ROUTES = {
+  HOME: 'home',
+  PROJECT: 'project',
+  TRASH: 'trash',
+};
+
 function App() {
   const [isLocked, setIsLocked] = useState(true);
   const [showLanding, setShowLanding] = useState(true);
   const [passphrase, setPassphrase] = useState('');
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [secrets, setSecrets] = useState<Secret[]>([]);
-  const [deletedSecrets, setDeletedSecrets] = useState<Secret[]>([]);
+  const [projects, setProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [secrets, setSecrets] = useState([]);
+  const [deletedSecrets, setDeletedSecrets] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [globalSearch, setGlobalSearch] = useState('');
   const [newProjectName, setNewProjectName] = useState('');
-  const [projectTags, setProjectTags] = useState<string[]>([]);
+  const [projectTags, setProjectTags] = useState([]);
   const [showNewProject, setShowNewProject] = useState(false);
   const [newSecret, setNewSecret] = useState({ title: '', content: '', category: 'password' });
-  const [editingSecret, setEditingSecret] = useState<Secret | null>(null);
-  const [showSecretContent, setShowSecretContent] = useState<Record<string, boolean>>({});
-  const [copyStatus, setCopyStatus] = useState<Record<string, boolean>>({});
-  const [theme, setTheme] = useState<Theme>('light');
-  const [showTrash, setShowTrash] = useState(false);
+  const [editingSecret, setEditingSecret] = useState(null);
+  const [showSecretContent, setShowSecretContent] = useState({});
+  const [copyStatus, setCopyStatus] = useState({});
+  const [theme, setTheme] = useState('light');
+  const [currentRoute, setCurrentRoute] = useState(ROUTES.HOME);
 
   // Parallax effect
   const mouseX = useMotionValue(0);
@@ -42,6 +49,7 @@ function App() {
   useEffect(() => {
     if (selectedProject) {
       loadSecrets(selectedProject.id);
+      setCurrentRoute(ROUTES.PROJECT);
     }
   }, [selectedProject]);
 
@@ -51,7 +59,7 @@ function App() {
 
   // Auto-lock after 30 minutes of inactivity
   useEffect(() => {
-    let timeout: number;
+    let timeout;
     const resetTimeout = () => {
       clearTimeout(timeout);
       timeout = setTimeout(() => {
@@ -77,7 +85,7 @@ function App() {
     setProjects(loadedProjects);
   };
 
-  const loadSecrets = async (projectId: string) => {
+  const loadSecrets = async (projectId) => {
     const loadedSecrets = await secretsDB.getAllByProject(projectId);
     setSecrets(loadedSecrets);
   };
@@ -87,7 +95,7 @@ function App() {
     setDeletedSecrets(deleted);
   };
 
-  const handleUnlock = async (e: React.FormEvent) => {
+  const handleUnlock = async (e) => {
     e.preventDefault();
     if (passphrase.length >= 8) {
       setIsLocked(false);
@@ -95,10 +103,10 @@ function App() {
     }
   };
 
-  const handleCreateProject = async (e: React.FormEvent) => {
+  const handleCreateProject = async (e) => {
     e.preventDefault();
     if (newProjectName.trim()) {
-      const project: Project = {
+      const project = {
         id: crypto.randomUUID(),
         name: newProjectName,
         tags: projectTags,
@@ -113,20 +121,20 @@ function App() {
     }
   };
 
-  const handleTogglePin = async (projectId: string) => {
+  const handleTogglePin = async (projectId) => {
     await projectsDB.togglePin(projectId);
     loadProjects();
   };
 
-  const handleUpdateTags = async (projectId: string, tags: string[]) => {
+  const handleUpdateTags = async (projectId, tags) => {
     await projectsDB.updateTags(projectId, tags);
     loadProjects();
   };
 
-  const handleCreateSecret = async (e: React.FormEvent) => {
+  const handleCreateSecret = async (e) => {
     e.preventDefault();
     if (selectedProject && newSecret.title && newSecret.content) {
-      const secret: Secret = {
+      const secret = {
         id: crypto.randomUUID(),
         projectId: selectedProject.id,
         title: newSecret.title,
@@ -142,7 +150,7 @@ function App() {
     }
   };
 
-  const handleUpdateSecret = async (e: React.FormEvent) => {
+  const handleUpdateSecret = async (e) => {
     e.preventDefault();
     if (editingSecret && selectedProject) {
       const updated = {
@@ -159,13 +167,16 @@ function App() {
     }
   };
 
-  const handleDeleteSecret = async (secretId: string) => {
+  const handleDeleteSecret = async (secretId) => {
     await secretsDB.delete(secretId);
-    loadSecrets(selectedProject!.id);
+    // Reload both project secrets and deleted secrets
+    if (selectedProject) {
+      loadSecrets(selectedProject.id);
+    }
     loadDeletedSecrets();
   };
 
-  const handleRestoreSecret = async (secretId: string) => {
+  const handleRestoreSecret = async (secretId) => {
     await secretsDB.restore(secretId);
     loadDeletedSecrets();
     if (selectedProject) {
@@ -173,12 +184,12 @@ function App() {
     }
   };
 
-  const handlePermanentDelete = async (secretId: string) => {
+  const handlePermanentDelete = async (secretId) => {
     await secretsDB.permanentDelete(secretId);
     loadDeletedSecrets();
   };
 
-  const handleCopySecret = async (secret: Secret) => {
+  const handleCopySecret = async (secret) => {
     try {
       const decrypted = decrypt({ iv: '', content: secret.content }, passphrase);
       const textArea = document.createElement('textarea');
@@ -223,7 +234,7 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImport = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
       const text = await file.text();
@@ -239,6 +250,16 @@ function App() {
         loadSecrets(selectedProject.id);
       }
     }
+  };
+
+  const navigateToTrash = () => {
+    setCurrentRoute(ROUTES.TRASH);
+    loadDeletedSecrets(); // Ensure trash is loaded when navigating to it
+  };
+
+  const navigateHome = () => {
+    setCurrentRoute(ROUTES.HOME);
+    setSelectedProject(null);
   };
 
   if (showLanding) {
@@ -472,14 +493,23 @@ function App() {
             />
           </label>
           <button
-            onClick={() => setShowTrash(!showTrash)}
+            onClick={navigateToTrash}
             className={clsx(
               'neo-button w-full px-3 py-2',
-              showTrash ? 'bg-red-300' : 'bg-white'
+              currentRoute === ROUTES.TRASH ? 'bg-red-300' : 'bg-white'
             )}
           >
             <Trash2 className="w-4 h-4 inline-block mr-2" />
             Trash Bin
+          </button>
+          <button
+            onClick={navigateHome}
+            className={clsx(
+              'neo-button w-full px-3 py-2',
+              currentRoute === ROUTES.HOME && !selectedProject ? 'bg-blue-300' : 'bg-white'
+            )}
+          >
+            Home
           </button>
           <button
             onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
@@ -492,37 +522,53 @@ function App() {
 
       <div className="flex-1 p-8">
         <div className="max-w-4xl mx-auto">
-          {showTrash ? (
+          {currentRoute === ROUTES.TRASH ? (
             <div>
-              <h2 className="text-2xl font-black mb-4">Trash Bin</h2>
-              <div className="space-y-4">
-                {deletedSecrets.map(secret => (
-                  <div key={secret.id} className="neo-card p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-bold">{secret.title}</h3>
-                        <span className="text-sm bg-gray-200 px-2 py-1 rounded">
-                          {secret.category}
-                        </span>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleRestoreSecret(secret.id)}
-                          className="neo-button p-2 bg-green-300"
-                        >
-                          Restore
-                        </button>
-                        <button
-                          onClick={() => handlePermanentDelete(secret.id)}
-                          className="neo-button p-2 bg-red-300"
-                        >
-                          Delete Forever
-                        </button>
+              <div className="flex items-center mb-6">
+                <button
+                  onClick={navigateHome}
+                  className="neo-button p-2 mr-4 bg-gray-300"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <h2 className="text-2xl font-black">Trash Bin</h2>
+              </div>
+
+              {deletedSecrets.length === 0 ? (
+                <div className="neo-card p-8 text-center">
+                  <p className="text-lg mb-4">Trash Bin Currently under development</p>
+                  <p className="text-gray-600">Items you delete will appear here</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {deletedSecrets.map(secret => (
+                    <div key={secret.id} className="neo-card p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-bold">{secret.title}</h3>
+                          <span className="text-sm bg-gray-200 px-2 py-1 rounded">
+                            {secret.category}
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleRestoreSecret(secret.id)}
+                            className="neo-button p-2 bg-green-300"
+                          >
+                            Restore
+                          </button>
+                          <button
+                            onClick={() => handlePermanentDelete(secret.id)}
+                            className="neo-button p-2 bg-red-300"
+                          >
+                            Delete Forever
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : selectedProject ? (
             <>
@@ -585,73 +631,88 @@ function App() {
                   )}
                 </form>
 
-                <div className="space-y-4">
-                  {filteredSecrets.map(secret => (
-                    <div key={secret.id} className="neo-card p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <h3 className="font-bold">{secret.title}</h3>
-                          <span className="text-sm bg-gray-200 px-2 py-1 rounded">
-                            {secret.category}
-                          </span>
+                {filteredSecrets.length === 0 ? (
+                  <div className="neo-card p-8 text-center">
+                    <p className="text-lg mb-4">No secrets found</p>
+                    <p className="text-gray-600">Add your first secret using the form above</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredSecrets.map(secret => (
+                      <div key={secret.id} className="neo-card p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <h3 className="font-bold">{secret.title}</h3>
+                            <span className="text-sm bg-gray-200 px-2 py-1 rounded">
+                              {secret.category}
+                            </span>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleCopySecret(secret)}
+                              className={clsx(
+                                "neo-button p-2",
+                                copyStatus[secret.id] ? "bg-green-300" : "bg-blue-300"
+                              )}
+                            >
+                              <Copy className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setShowSecretContent({
+                                ...showSecretContent,
+                                [secret.id]: !showSecretContent[secret.id]
+                              })}
+                              className="neo-button p-2 bg-yellow-300"
+                            >
+                              {showSecretContent[secret.id] ? (
+                                <EyeOff className="w-4 h-4" />
+                              ) : (
+                                <Eye className="w-4 h-4" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingSecret(secret);
+                                setNewSecret({
+                                  title: secret.title,
+                                  content: decrypt({ iv: '', content: secret.content }, passphrase),
+                                  category: secret.category
+                                });
+                              }}
+                              className="neo-button p-2 bg-purple-300"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteSecret(secret.id)}
+                              className="neo-button p-2 bg-red-300"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleCopySecret(secret)}
-                            className={clsx(
-                              "neo-button p-2",
-                              copyStatus[secret.id] ? "bg-green-300" : "bg-blue-300"
-                            )}
-                          >
-                            <Copy className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setShowSecretContent({
-                              ...showSecretContent,
-                              [secret.id]: !showSecretContent[secret.id]
-                            })}
-                            className="neo-button p-2 bg-yellow-300"
-                          >
-                            {showSecretContent[secret.id] ? (
-                              <EyeOff className="w-4 h-4" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
-                            )}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditingSecret(secret);
-                              setNewSecret({
-                                title: secret.title,
-                                content: decrypt({ iv: '', content: secret.content }, passphrase),
-                                category: secret.category
-                              });
-                            }}
-                            className="neo-button p-2 bg-purple-300"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteSecret(secret.id)}
-                            className="neo-button p-2 bg-red-300"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                        {showSecretContent[secret.id] && (
+                          <div className="mt-2 font-mono bg-gray-100 p-2 rounded">
+                            {decrypt({ iv: '', content: secret.content }, passphrase)}
+                          </div>
+                        )}
                       </div>
-                      {showSecretContent[secret.id] && (
-                        <div className="mt-2 font-mono bg-gray-100 p-2 rounded">
-                          {decrypt({ iv: '', content: secret.content }, passphrase)}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </>
           ) : (
-            <div className="text-center">
-              <h2 className="text-xl font-bold">Select a project or create a new one</h2>
+            <div className="text-center neo-card p-8">
+              <h2 className="text-xl font-bold mb-4">Welcome to Your Secret Manager</h2>
+              <p className="mb-6">Select a project from the sidebar or create a new one to get started.</p>
+              <button
+                onClick={() => setShowNewProject(true)}
+                className="neo-button px-6 py-3 bg-blue-300"
+              >
+                <Plus className="w-5 h-5 inline-block mr-2" />
+                Create New Project
+              </button>
             </div>
           )}
         </div>
