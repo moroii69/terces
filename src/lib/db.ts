@@ -106,9 +106,9 @@ export const secretsDB = {
 
   async getDeleted(): Promise<Secret[]> {
     const db = await initDB();
-    const tx = db.transaction('secrets', 'readonly');
-    const index = tx.store.index('isDeleted');
-    return index.getAll(true);
+    const allSecrets = await db.getAll('secrets');
+    // Filter the secrets in JavaScript instead of using the index
+    return allSecrets.filter(secret => secret.isDeleted === true);
   },
 
   async add(secret: Secret): Promise<string> {
