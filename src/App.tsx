@@ -249,19 +249,17 @@ function App() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="w-full max-w-4xl">
+        <div className="w-full max-w-4xl relative">
+          {/* Beta tag */}
+          <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">
+            Currently in Beta
+          </div>
+
           <motion.div
-            className="neo-card p-8 mb-8 parallax-container"
-            style={{ rotateX, rotateY }}
-            onMouseMove={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              mouseX.set(e.clientX - rect.left - rect.width / 2);
-              mouseY.set(e.clientY - rect.top - rect.height / 2);
-            }}
-            onMouseLeave={() => {
-              mouseX.set(0);
-              mouseY.set(0);
-            }}
+            className="neo-card p-8 mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
           >
             <motion.div
               className="text-center mb-12 parallax-element"
@@ -342,6 +340,11 @@ function App() {
                   GET STARTED
                 </button>
               </form>
+            </div>
+
+            {/* Added strong passphrase note */}
+            <div className="mt-6 text-center text-sm text-gray-600">
+              <p>Use a strong, unique passphrase that you won't forget. We cannot recover your data if you lose your passphrase.</p>
             </div>
           </motion.div>
         </div>
